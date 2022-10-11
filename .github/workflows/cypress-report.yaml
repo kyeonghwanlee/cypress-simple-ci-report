@@ -2,7 +2,8 @@ name: Create Cypress report
 
 on:
   workflow_dispatch:
-
+  pull_request: 
+    types: [opened]
 jobs:
   
   cypress-e2e-chrome81:
@@ -42,19 +43,13 @@ jobs:
       - name: Update PR body
         uses: AsasInnab/pr-body-action@v1
         if: steps.find.outputs.issue != ''
+        id: body
         with:
+          input-text: "[${{ steps.find.outputs.issue }}](${{ secrets.JIRA_BASE_URL }}/browse/${{ steps.find.outputs.issue }})\n${{ github.event.pull_request.body }}"
           body: "[${{ steps.find.outputs.issue }}](${{ secrets.JIRA_BASE_URL }}/browse/${{ steps.find.outputs.issue }})\n${{ github.event.pull_request.body }}"
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      
-      - name: Deploy report page
-        uses: peaceiris/actions-gh-pages@v3
-        with:
-          github_token: ${{ secrets.GITHUB_TOKEN }}
-          publish_dir: ./public
-          user_name: 'github-actions[bot]'
-          user_email: 'github-actions[bot]@users.noreply.github.com'
 
-      - name: action-slack
+      - name: sction-slack
         uses: 8398a7/action-slack@v3
         with:
           status: ${{ job.status }}
@@ -69,8 +64,8 @@ jobs:
           # eventName : GiitHub Actions가 트리거한 이벤트 이름
           # ref : Giit의 참조
           # workflow : 워크플로우 이름 및 링크
-          author_name: cypress-simple-ci-report "https://kyeonghwanlee.github.io/cypress-simple-ci-report/"
-          fields: repo,message,commit,author,action,eventName,workflow,pullRequest # selectable (default: repo,message)
+          author_name: "${{ steps.body.outputs.issue }}"
+          fields: repo,author,action,eventName,workflow,pullRequest # selectable (default: repo,message)
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }} # required
